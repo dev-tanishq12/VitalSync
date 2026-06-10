@@ -2,23 +2,51 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { authFetch } from "@/lib/fetch";
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const [score, setScore] = useState(0);
+  const [metrics, setMetrics] = useState<any>(null);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    let current = 0;
-    const target = 85;
-    const interval = setInterval(() => {
-      if (current < target) {
-        current++;
-        setScore(current);
-      } else {
-        clearInterval(interval);
+    if (loading) return;
+    if (!user) {
+      router.push("/join");
+      return;
+    }
+
+    // Fetch dashboard data
+    const fetchDashboard = async () => {
+      try {
+        const res = await authFetch("/api/dashboard");
+        if (res.ok) {
+          const data = await res.json();
+          setMetrics(data.metrics);
+          
+          // Animate score based on readiness score
+          let current = 0;
+          const target = data.metrics.readinessScore || 85;
+          const interval = setInterval(() => {
+            if (current < target) {
+              current++;
+              setScore(current);
+            } else {
+              clearInterval(interval);
+            }
+          }, 20);
+          return () => clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
       }
-    }, 20);
-    return () => clearInterval(interval);
-  }, []);
+    };
+    
+    fetchDashboard();
+  }, [user, loading, router]);
 
   return (
     <div className="bg-[#0b1326] text-[#dae2fd] font-['Inter'] overflow-hidden h-screen flex">
@@ -145,8 +173,12 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined">add_circle</span>
               </button>
             </div>
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#adc6ff]/30 ml-2">
-              <img alt="User avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA13cSVABHXyJJf1e4brazEQvijKDeVrPRTOmK5PYoveGYpnsy890mNt2XcKUFWJ5t85y_p0Y2BCYYgP6fbJtCfBAHYjVrd3_29T8n8R_H9XrZxTaV7RHN8659x2rQqoexHCJfZtl-r1Fz--dvtVVnhqKrGFSct5Jhai446mxwlP-XX3JrXXiYfNYpGR5FzMpmpJ251PuTohDNM2iYhgoKimjs7lWG7IzsxU5JqoPHmmvG_85Aufe4sLjwd9EFjeOOmAQDgjnnEbNx3" />
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#adc6ff]/30 ml-2 flex items-center justify-center bg-[#002e6a]">
+              {user?.photoURL ? (
+                <img alt="User avatar" className="w-full h-full object-cover" src={user.photoURL} />
+              ) : (
+                <span className="text-[#adc6ff] font-bold text-lg">{user?.displayName?.charAt(0) || "O"}</span>
+              )}
             </div>
           </div>
         </header>
@@ -157,7 +189,7 @@ export default function DashboardPage() {
           <section className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
-                <h1 className="font-['Plus_Jakarta_Sans'] text-[48px] font-bold text-[#adc6ff] mb-2 leading-tight">Good morning, Alex</h1>
+                <h1 className="font-['Plus_Jakarta_Sans'] text-[48px] font-bold text-[#adc6ff] mb-2 leading-tight">Good morning, {user?.displayName || "Optimizer"}</h1>
                 <p className="font-['Inter'] text-[18px] text-[#c2c6d6] max-w-xl">
                   "The only way to improve is to measure. Your recovery is optimal today, perfect for a high-intensity session."
                 </p>
@@ -201,12 +233,12 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   <h4 className="font-['Inter'] text-[14px] text-[#c2c6d6]">Steps Today</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">8,432</span>
+                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">{metrics?.steps?.toLocaleString() || "8,432"}</span>
                     <span className="text-[#c2c6d6]/60 text-sm">/ 10k</span>
                   </div>
                 </div>
                 <div className="mt-4 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#adc6ff] neo-glow-primary rounded-full" style={{ width: "84%" }}></div>
+                  <div className="h-full bg-[#adc6ff] neo-glow-primary rounded-full" style={{ width: `${Math.min(100, ((metrics?.steps || 8432) / 10000) * 100)}%` }}></div>
                 </div>
               </div>
 
@@ -221,7 +253,7 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   <h4 className="font-['Inter'] text-[14px] text-[#c2c6d6]">Heart Rate</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">74</span>
+                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">{metrics?.heartRate || "74"}</span>
                     <span className="text-[#c2c6d6]/60 text-sm">BPM</span>
                   </div>
                 </div>
@@ -245,12 +277,12 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   <h4 className="font-['Inter'] text-[14px] text-[#c2c6d6]">Burned</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">1,840</span>
+                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">{metrics?.calories?.toLocaleString() || "1,840"}</span>
                     <span className="text-[#c2c6d6]/60 text-sm">kcal</span>
                   </div>
                 </div>
                 <div className="mt-4 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#d0bcff] rounded-full" style={{ width: "72%" }}></div>
+                  <div className="h-full bg-[#d0bcff] rounded-full" style={{ width: `${Math.min(100, ((metrics?.calories || 1840) / 2500) * 100)}%` }}></div>
                 </div>
               </div>
 
@@ -265,7 +297,7 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   <h4 className="font-['Inter'] text-[14px] text-[#c2c6d6]">Sleep Duration</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">7h 42m</span>
+                    <span className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold">{metrics?.sleep || "7.2"}h</span>
                     <span className="text-[#c2c6d6]/60 text-sm">92% Quality</span>
                   </div>
                 </div>

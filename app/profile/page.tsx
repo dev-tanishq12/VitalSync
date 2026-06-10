@@ -2,35 +2,52 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/AuthContext";
+import { authFetch } from "@/lib/fetch";
 
 export default function ProfilePage() {
+  const { user } = useAuth();
   const [appleSyncStatus, setAppleSyncStatus] = useState("Sync Now");
   const [isAppleSyncing, setIsAppleSyncing] = useState(false);
   const [fitbitSyncStatus, setFitbitSyncStatus] = useState("Sync Now");
   const [isFitbitSyncing, setIsFitbitSyncing] = useState(false);
 
-  const handleAppleSync = () => {
+  const handleAppleSync = async () => {
     setIsAppleSyncing(true);
     setAppleSyncStatus("Syncing...");
-    setTimeout(() => {
+    try {
+      await authFetch("/api/devices/sync", {
+        method: "POST",
+        body: JSON.stringify({ provider: "Apple Health" })
+      });
       setAppleSyncStatus("Success");
+    } catch (e) {
+      setAppleSyncStatus("Failed");
+    } finally {
       setTimeout(() => {
         setAppleSyncStatus("Sync Now");
         setIsAppleSyncing(false);
       }, 2000);
-    }, 1500);
+    }
   };
 
-  const handleFitbitSync = () => {
+  const handleFitbitSync = async () => {
     setIsFitbitSyncing(true);
     setFitbitSyncStatus("Syncing...");
-    setTimeout(() => {
+    try {
+      await authFetch("/api/devices/sync", {
+        method: "POST",
+        body: JSON.stringify({ provider: "Fitbit Sense 2" })
+      });
       setFitbitSyncStatus("Success");
+    } catch (e) {
+      setFitbitSyncStatus("Failed");
+    } finally {
       setTimeout(() => {
         setFitbitSyncStatus("Sync Now");
         setIsFitbitSyncing(false);
       }, 2000);
-    }, 1500);
+    }
   };
 
   return (
@@ -78,8 +95,12 @@ export default function ProfilePage() {
             <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">sync</button>
             <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">add_circle</button>
           </div>
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#adc6ff]/20 hidden md:block">
-            <img alt="User avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbsfflm5VZpsv6dedxd0ZRM7qBbW1vF76Tno3He2JQPuQuGkb317TSfPDEmuUqmUPX-Ts333olebt6aVAuA_rGqjTsL-HmPRCT_mMO0MLuauBUgFZspfhGj1kZRATMORUNvSMkMEvQQy7Nx0SwLoPNOs6_o3kbySiBUWjq2aJ9WHZhDzVtEUpA6y4hiWVAdHma6h6vIdEmBQ6sKhLwQFQSwfzLvyCmA4YJEwksMYDQi4GR0IwkVDOxDfWSlg2-EwoF5eIsTb6Mlekl" />
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#adc6ff]/20 hidden md:flex items-center justify-center bg-[#002e6a]">
+            {user?.photoURL ? (
+              <img alt="User avatar" className="w-full h-full object-cover" src={user.photoURL} />
+            ) : (
+              <span className="text-[#adc6ff] font-bold text-lg">{user?.displayName?.charAt(0) || "O"}</span>
+            )}
           </div>
         </div>
       </header>
@@ -151,14 +172,18 @@ export default function ProfilePage() {
               {/* User Info Card */}
               <div className="lg:col-span-4 glass-card rounded-[32px] p-8 flex flex-col items-center text-center">
                 <div className="relative mb-6">
-                  <div className="w-32 h-32 rounded-full border-4 border-[#adc6ff] p-1">
-                    <img alt="Profile" className="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZwr5kR274U5CsezrWDuiN3D89oqXs4cqDEYQOfrgOBEMys0DBL_bWC-W3NOLusbDqwHD0nBXL9VSIHQhzcGKKIl5vvtHUY-ipY44WbKMgPIVaTY_QPQk7NP-vIaH6AeFlWps-zPgMO7bOgoiO2w-nMq4EfWXwT3eC2aCGU_RXBlpXi8v8lxJiGcd_t8WxNcDWx4ED2JIf7yhgGNbwXgnzjxKCfj6VG94K7fExkfwuEuDoxMbiUq0C_zj7ndYuxd0RRgm4jeUe3llT" />
+                  <div className="w-32 h-32 rounded-full border-4 border-[#adc6ff] p-1 flex items-center justify-center bg-[#002e6a]">
+                    {user?.photoURL ? (
+                      <img alt="Profile" className="w-full h-full object-cover rounded-full" src={user.photoURL} />
+                    ) : (
+                      <span className="text-[#adc6ff] font-bold text-6xl">{user?.displayName?.charAt(0) || "O"}</span>
+                    )}
                   </div>
                   <div className="absolute bottom-1 right-1 bg-[#4edea3] w-8 h-8 rounded-full border-4 border-[#0b1326] flex items-center justify-center">
                     <span className="material-symbols-outlined text-[#003824] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                   </div>
                 </div>
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold text-[#dae2fd]">Alex Chen</h3>
+                <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold text-[#dae2fd]">{user?.displayName || "Alex Chen"}</h3>
                 <p className="text-[#c2c6d6] mb-6">Elite Biohacker | San Francisco, CA</p>
                 <div className="w-full grid grid-cols-2 gap-4">
                   <div className="sunken-input p-4 rounded-2xl">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/AuthContext";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -11,6 +12,8 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
+import AIChatbot from "@/components/AIChatbot";
 
 export const metadata: Metadata = {
   title: "VitalSync | Premium Wellness",
@@ -31,7 +34,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-full flex flex-col font-body" suppressHydrationWarning>
-        {children}
+        <AuthProvider>
+          {children}
+          <AIChatbot />
+        </AuthProvider>
       </body>
     </html>
   );

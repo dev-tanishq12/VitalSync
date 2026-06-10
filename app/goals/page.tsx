@@ -1,19 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/AuthContext";
+import { authFetch } from "@/lib/fetch";
 
 export default function GoalsPage() {
+  const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState("Save Record");
+  const [records, setRecords] = useState<any[]>([]);
+  
+  // Form state
+  const [metricCategory, setMetricCategory] = useState("Heart Rate (BPM)");
+  const [metricValue, setMetricValue] = useState("");
+  const [metricDate, setMetricDate] = useState("");
+  const [metricTime, setMetricTime] = useState("");
 
-  const handleSave = () => {
+  // Create Goal state
+  const [isCreateGoalOpen, setIsCreateGoalOpen] = useState(false);
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+  const [goalStatus, setGoalStatus] = useState("Create Goal");
+
+  const handleCreateGoal = async () => {
+    if (!goalTitle || !goalTarget) return;
+    setGoalStatus("Creating...");
+    try {
+      const res = await authFetch("/api/goals", {
+        method: "POST",
+        body: JSON.stringify({
+          title: goalTitle,
+          description: "",
+          targetValue: goalTarget,
+          unit: "unit",
+        })
+      });
+      if (res.ok) {
+        setGoalStatus("Success!");
+        setTimeout(() => {
+          setIsCreateGoalOpen(false);
+          setGoalTitle("");
+          setGoalTarget("");
+          setGoalStatus("Create Goal");
+        }, 1000);
+      } else {
+        setGoalStatus("Error");
+        setTimeout(() => setGoalStatus("Create Goal"), 2000);
+      }
+    } catch (err) {
+      setGoalStatus("Error");
+      setTimeout(() => setGoalStatus("Create Goal"), 2000);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchRecords();
+    }
+  }, [user]);
+
+  const fetchRecords = async () => {
+    try {
+      const res = await authFetch("/api/records");
+      if (res.ok) {
+        const data = await res.json();
+        setRecords(data.records || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch records", err);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!metricValue) return;
     setSaveStatus("Syncing...");
-    setTimeout(() => {
-      setSaveStatus("Record Saved!");
-      setTimeout(() => {
-        setSaveStatus("Save Record");
-      }, 2000);
-    }, 1200);
+    
+    let combinedDate = new Date();
+    if (metricDate && metricTime) {
+      combinedDate = new Date(`${metricDate}T${metricTime}`);
+    }
+
+    try {
+      const res = await authFetch("/api/records", {
+        method: "POST",
+        body: JSON.stringify({
+          metricType: metricCategory,
+          value: parseFloat(metricValue),
+          unit: metricCategory.includes("BPM") ? "bpm" : metricCategory.includes("kg") ? "kg" : "unit",
+          recordedAt: combinedDate.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        setSaveStatus("Record Saved!");
+        fetchRecords();
+        setMetricValue("");
+        setTimeout(() => setSaveStatus("Save Record"), 2000);
+      } else {
+        setSaveStatus("Error Saving");
+        setTimeout(() => setSaveStatus("Save Record"), 2000);
+      }
+    } catch (err) {
+      setSaveStatus("Error Saving");
+      setTimeout(() => setSaveStatus("Save Record"), 2000);
+    }
   };
 
   return (
@@ -92,7 +182,7 @@ export default function GoalsPage() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>target</span>
             <span className="font-['Inter'] text-[14px]">Goals</span>
           </Link>
-          <Link href="#" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
+          <Link href="/goals#health-records" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">folder_shared</span>
             <span className="font-['Inter'] text-[14px]">Health Records</span>
           </Link>
@@ -100,11 +190,11 @@ export default function GoalsPage() {
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">emoji_events</span>
             <span className="font-['Inter'] text-[14px]">Challenges</span>
           </Link>
-          <Link href="#" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
+          <Link href="/gamified" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">military_tech</span>
             <span className="font-['Inter'] text-[14px]">Achievements</span>
           </Link>
-          <Link href="#" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
+          <Link href="/profile" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">devices</span>
             <span className="font-['Inter'] text-[14px]">Devices</span>
           </Link>
@@ -142,7 +232,7 @@ export default function GoalsPage() {
               <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold text-[#dae2fd]">Health Optimization Goals</h1>
               <p className="text-[#c2c6d6] mt-2 text-[14px]">Track your progress toward peak performance.</p>
             </div>
-            <button className="bg-[#adc6ff] hover:bg-[#4d8eff] text-[#00285d] font-['Inter'] text-[14px] font-semibold px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#adc6ff]/20 active:scale-95 w-full md:w-auto">
+            <button onClick={() => setIsCreateGoalOpen(true)} className="bg-[#adc6ff] hover:bg-[#4d8eff] text-[#00285d] font-['Inter'] text-[14px] font-semibold px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#adc6ff]/20 active:scale-95 w-full md:w-auto">
               <span className="material-symbols-outlined">add</span>
               Create New Goal
             </button>
@@ -273,7 +363,7 @@ export default function GoalsPage() {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Vitals Category</label>
-                  <select className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none">
+                  <select value={metricCategory} onChange={e => setMetricCategory(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none">
                     <option className="bg-[#0b1326]">Heart Rate (BPM)</option>
                     <option className="bg-[#0b1326]">Blood Glucose (mg/dL)</option>
                     <option className="bg-[#0b1326]">Body Weight (kg)</option>
@@ -283,16 +373,16 @@ export default function GoalsPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Value</label>
-                  <input className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none placeholder:text-[#424754]" placeholder="Enter metric..." type="text" />
+                  <input value={metricValue} onChange={e => setMetricValue(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none placeholder:text-[#424754]" placeholder="Enter metric..." type="text" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Date</label>
-                    <input className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="date" />
+                    <input value={metricDate} onChange={e => setMetricDate(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="date" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Time</label>
-                    <input className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="time" />
+                    <input value={metricTime} onChange={e => setMetricTime(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="time" />
                   </div>
                 </div>
                 <button 
@@ -329,62 +419,37 @@ export default function GoalsPage() {
                     </tr>
                   </thead>
                   <tbody className="text-[16px] divide-y divide-white/5">
-                    <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
-                      <td className="px-8 py-6 flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-[#adc6ff]"></div>
-                        <span>Resting HR</span>
-                      </td>
-                      <td className="px-8 py-6 font-bold">58 BPM</td>
-                      <td className="px-8 py-6 text-[#c2c6d6]">Oct 24, 2023 · 07:12 AM</td>
-                      <td className="px-8 py-6">
-                        <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">OPTIMAL</span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
-                      <td className="px-8 py-6 flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-[#d0bcff]"></div>
-                        <span>Weight</span>
-                      </td>
-                      <td className="px-8 py-6 font-bold">82.4 kg</td>
-                      <td className="px-8 py-6 text-[#c2c6d6]">Oct 23, 2023 · 06:45 AM</td>
-                      <td className="px-8 py-6">
-                        <span className="bg-[#adc6ff]/10 text-[#adc6ff] px-2 py-1 rounded-full text-[10px] font-bold">STABLE</span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
-                      <td className="px-8 py-6 flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-[#ffb4ab]"></div>
-                        <span>BP Sys/Dia</span>
-                      </td>
-                      <td className="px-8 py-6 font-bold">135/88</td>
-                      <td className="px-8 py-6 text-[#c2c6d6]">Oct 22, 2023 · 08:30 PM</td>
-                      <td className="px-8 py-6">
-                        <span className="bg-[#ffb4ab]/10 text-[#ffb4ab] px-2 py-1 rounded-full text-[10px] font-bold">ELEVATED</span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
-                      <td className="px-8 py-6 flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-[#adc6ff]"></div>
-                        <span>Resting HR</span>
-                      </td>
-                      <td className="px-8 py-6 font-bold">62 BPM</td>
-                      <td className="px-8 py-6 text-[#c2c6d6]">Oct 21, 2023 · 07:15 AM</td>
-                      <td className="px-8 py-6">
-                        <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">OPTIMAL</span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                      </td>
-                    </tr>
+                    {records.length > 0 ? records.map(record => (
+                      <tr key={record.id} className="hover:bg-white/5 transition-colors cursor-pointer group">
+                        <td className="px-8 py-6 flex items-center gap-4">
+                          <div className={`w-2 h-2 rounded-full ${record.metricType.includes("Heart") ? "bg-[#adc6ff]" : record.metricType.includes("Weight") ? "bg-[#d0bcff]" : "bg-[#4edea3]"}`}></div>
+                          <span>{record.metricType}</span>
+                        </td>
+                        <td className="px-8 py-6 font-bold">{record.value} {record.unit}</td>
+                        <td className="px-8 py-6 text-[#c2c6d6]">{new Date(record.recordedAt).toLocaleString()}</td>
+                        <td className="px-8 py-6">
+                          <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">LOGGED</span>
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
+                        <td className="px-8 py-6 flex items-center gap-4">
+                          <div className="w-2 h-2 rounded-full bg-[#adc6ff]"></div>
+                          <span>Resting HR</span>
+                        </td>
+                        <td className="px-8 py-6 font-bold">58 BPM</td>
+                        <td className="px-8 py-6 text-[#c2c6d6]">Oct 24, 2023 · 07:12 AM</td>
+                        <td className="px-8 py-6">
+                          <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">OPTIMAL</span>
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -395,16 +460,39 @@ export default function GoalsPage() {
           </div>
         </section>
 
-        {/* Dynamic Visualization Overlay */}
-        <div className="fixed bottom-10 right-10 group z-30">
-          <button className="w-16 h-16 rounded-full bg-[#adc6ff] text-[#002e6a] flex items-center justify-center shadow-2xl shadow-[#adc6ff]/40 hover:scale-110 active:scale-95 transition-all duration-300">
-            <span className="material-symbols-outlined text-3xl">chat_bubble</span>
-          </button>
-          <div className="absolute bottom-20 right-0 glass-card rounded-xl p-4 w-64 opacity-0 scale-90 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 transition-all">
-            <p className="text-[14px] font-['Inter'] text-[#dae2fd] font-semibold">Vital AI Coach</p>
-            <p className="text-[12px] text-[#c2c6d6] mt-1">Based on your record today, increase water intake by 200ml to offset current intensity.</p>
+
+        {/* Create Goal Modal */}
+        {isCreateGoalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0b1326]/80 backdrop-blur-sm">
+            <div className="glass-card w-full max-w-md p-6 rounded-2xl border border-[#424754]/50 shadow-2xl relative">
+              <button 
+                onClick={() => setIsCreateGoalOpen(false)}
+                className="absolute top-4 right-4 text-[#c2c6d6] hover:text-[#dae2fd]"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+              <h2 className="text-[20px] font-['Plus_Jakarta_Sans'] font-bold text-[#dae2fd] mb-6">Create New Goal</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[12px] text-[#8c909f] font-semibold mb-2">Goal Title</label>
+                  <input type="text" value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} className="w-full bg-[#1e293b]/50 border border-[#424754] rounded-xl px-4 py-3 text-[#dae2fd] outline-none focus:border-[#adc6ff] transition-colors" placeholder="e.g. Daily Steps" />
+                </div>
+                <div>
+                  <label className="block text-[12px] text-[#8c909f] font-semibold mb-2">Target Value</label>
+                  <input type="number" value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} className="w-full bg-[#1e293b]/50 border border-[#424754] rounded-xl px-4 py-3 text-[#dae2fd] outline-none focus:border-[#adc6ff] transition-colors" placeholder="e.g. 10000" />
+                </div>
+                <button 
+                  onClick={handleCreateGoal}
+                  disabled={goalStatus !== "Create Goal" || !goalTitle || !goalTarget}
+                  className="w-full mt-4 bg-gradient-to-r from-[#adc6ff] to-[#3b82f6] hover:from-[#3b82f6] hover:to-[#005ac2] text-[#001a42] font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {goalStatus}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
       </main>
     </div>
   );

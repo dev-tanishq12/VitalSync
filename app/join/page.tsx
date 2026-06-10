@@ -3,19 +3,78 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function JoinPage() {
   const [isSignup, setIsSignup] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/onboarding");
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to log in");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Google");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const provider = new OAuthProvider('apple.com');
+      await signInWithPopup(auth, provider);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Apple");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/onboarding");
+    setError("");
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      import("firebase/auth").then(({ updateProfile }) => {
+        updateProfile(userCredential.user, {
+          displayName: `${firstName} ${lastName}`.trim()
+        });
+      });
+      router.push("/onboarding");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign up");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,23 +135,24 @@ export default function JoinPage() {
                   </div>
                   
                   <form className="space-y-4 pt-4" onSubmit={handleLoginSubmit}>
+                    {error && <p className="text-[#ffb4ab] text-sm">{error}</p>}
                     <div className="space-y-1">
                       <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest px-1">Email Address</label>
-                      <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="name@vital.sync" type="email" required />
+                      <input value={email} onChange={e => setEmail(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="name@vital.sync" type="email" required />
                     </div>
                     <div className="space-y-1">
                       <div className="flex justify-between items-center px-1">
                         <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest">Password</label>
                         <a className="font-['Inter'] text-[12px] font-semibold text-[#adc6ff] hover:text-[#4d8eff] transition-colors" href="#">Forgot Password?</a>
                       </div>
-                      <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="••••••••" type="password" required />
+                      <input value={password} onChange={e => setPassword(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="••••••••" type="password" required />
                     </div>
                     <div className="flex items-center gap-2 px-1">
                       <input className="w-4 h-4 rounded border-[#424754] bg-[#2d3449] text-[#adc6ff] focus:ring-[#adc6ff] ring-offset-[#0b1326]" id="remember" type="checkbox" />
                       <label className="font-['Inter'] text-[14px] text-[#c2c6d6] cursor-pointer" htmlFor="remember">Remember this device</label>
                     </div>
-                    <button className="w-full h-14 bg-[#adc6ff] text-[#002e6a] font-['Plus_Jakarta_Sans'] text-[24px] font-semibold rounded-md hover:bg-[#4d8eff] active:scale-95 transition-all duration-200 shadow-lg shadow-[#adc6ff]/20 mt-[24px]" type="submit">
-                      Access Dashboard
+                    <button disabled={loading} className="w-full h-14 bg-[#adc6ff] text-[#002e6a] font-['Plus_Jakarta_Sans'] text-[24px] font-semibold rounded-md hover:bg-[#4d8eff] active:scale-95 transition-all duration-200 shadow-lg shadow-[#adc6ff]/20 mt-[24px]" type="submit">
+                      {loading ? "Accessing..." : "Access Dashboard"}
                     </button>
                   </form>
                   
@@ -102,7 +162,7 @@ export default function JoinPage() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-[24px]">
-                    <button className="flex items-center justify-center h-12 rounded-md glass-panel hover:bg-white/5 transition-colors group">
+                    <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center h-12 rounded-md glass-panel hover:bg-white/5 transition-colors group">
                       <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
@@ -111,7 +171,7 @@ export default function JoinPage() {
                       </svg>
                       <span className="font-['Inter'] text-[14px] text-[#dae2fd]">Google</span>
                     </button>
-                    <button className="flex items-center justify-center h-12 rounded-md glass-panel hover:bg-white/5 transition-colors group">
+                    <button type="button" onClick={handleAppleLogin} className="flex items-center justify-center h-12 rounded-md glass-panel hover:bg-white/5 transition-colors group">
                       <span className="material-symbols-outlined text-[#dae2fd] mr-3">apps</span>
                       <span className="font-['Inter'] text-[14px] text-[#dae2fd]">Apple</span>
                     </button>
@@ -133,23 +193,24 @@ export default function JoinPage() {
                   </div>
                   
                   <form className="space-y-4 pt-4" onSubmit={handleSignupSubmit}>
+                    {error && <p className="text-[#ffb4ab] text-sm">{error}</p>}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest px-1">First Name</label>
-                        <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="John" type="text" required />
+                        <input value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="John" type="text" required />
                       </div>
                       <div className="space-y-1">
                         <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest px-1">Last Name</label>
-                        <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="Doe" type="text" required />
+                        <input value={lastName} onChange={e => setLastName(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="Doe" type="text" required />
                       </div>
                     </div>
                     <div className="space-y-1">
                       <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest px-1">Email Address</label>
-                      <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="name@vital.sync" type="email" required />
+                      <input value={email} onChange={e => setEmail(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="name@vital.sync" type="email" required />
                     </div>
                     <div className="space-y-1">
                       <label className="font-['Inter'] text-[12px] font-semibold text-[#8c909f] uppercase tracking-widest px-1">Password</label>
-                      <input className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="Create strong password" type="password" required />
+                      <input value={password} onChange={e => setPassword(e.target.value)} className="w-full h-12 px-4 rounded-md glass-input text-[#dae2fd] font-['Inter'] text-[16px]" placeholder="Create strong password" type="password" required />
                     </div>
                     <div className="flex items-start gap-2 px-1">
                       <input className="mt-1 w-4 h-4 rounded border-[#424754] bg-[#2d3449] text-[#adc6ff] focus:ring-[#adc6ff]" id="terms" type="checkbox" required />
@@ -157,8 +218,8 @@ export default function JoinPage() {
                         I agree to the <a className="text-[#adc6ff] hover:underline" href="#">Terms of Service</a> and <a className="text-[#adc6ff] hover:underline" href="#">Privacy Policy</a>.
                       </label>
                     </div>
-                    <button className="w-full h-14 bg-[#4edea3] text-[#003824] font-['Plus_Jakarta_Sans'] text-[24px] font-semibold rounded-md hover:bg-[#00a572] active:scale-95 transition-all duration-200 shadow-lg shadow-[#4edea3]/20 mt-[24px]" type="submit">
-                      Begin Optimization
+                    <button disabled={loading} className="w-full h-14 bg-[#4edea3] text-[#003824] font-['Plus_Jakarta_Sans'] text-[24px] font-semibold rounded-md hover:bg-[#00a572] active:scale-95 transition-all duration-200 shadow-lg shadow-[#4edea3]/20 mt-[24px]" type="submit">
+                      {loading ? "Beginning..." : "Begin Optimization"}
                     </button>
                   </form>
                   
