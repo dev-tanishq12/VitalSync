@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/api-auth";
 import { db } from "@/lib/firebase-admin";
 
+export const runtime = 'nodejs';
+
 export async function GET(req: NextRequest) {
   const auth = await authenticateRequest(req);
   if (auth.error || !auth.user) {
