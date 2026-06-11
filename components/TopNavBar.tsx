@@ -68,8 +68,6 @@ export default function TopNavBar() {
         <div className="flex items-center gap-6">
           <div className="hidden lg:flex gap-4 items-center mr-4">
             <Link href="/dashboard" className="font-['Inter'] text-[14px] text-[#adc6ff] font-bold border-b-2 border-[#adc6ff] pb-1">Dashboard</Link>
-            <Link href="#" className="font-['Inter'] text-[14px] text-[#c2c6d6] font-medium hover:text-[#dae2fd] transition-colors">Trends</Link>
-            <Link href="#" className="font-['Inter'] text-[14px] text-[#c2c6d6] font-medium hover:text-[#dae2fd] transition-colors">Community</Link>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handleNotification} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 active:scale-95 transition-all text-[#c2c6d6]" title="Notifications">
