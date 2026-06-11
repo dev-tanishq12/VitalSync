@@ -6,14 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "node -e \"const fs=require('fs'); const p='./node_modules/jose/package.json'; if(fs.existsSync(p)){ const j=JSON.parse(fs.readFileSync(p)); if(j.exports && j.exports['.']){ delete j.exports['.'].browser; delete j.exports['.'].worker; delete j.exports['.']['edge-light']; fs.writeFileSync(p, JSON.stringify(j, null, 2)); } }\""
+    "lint": "eslint"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.4.2",
     "firebase": "^12.14.0",
-    "firebase-admin": "^14.0.0",
+    "firebase-admin": "^12.3.0",
     "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "react": "19.2.4",
