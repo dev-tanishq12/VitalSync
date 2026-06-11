@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       if (dayDiff >= 0 && dayDiff <= 6 && r.recordType !== "goal") {
         const dayIndex = 6 - dayDiff;
         if (type.includes("step")) {
-          weeklyActivity[dayIndex] += Number(r.value);
+          weeklyActivity[dayIndex] = Math.max(weeklyActivity[dayIndex], Number(r.value));
         } else if (type.includes("active") || type.includes("minute")) {
           // Fallback: active minutes * 100 roughly equivalent to steps
           weeklyActivity[dayIndex] += Number(r.value) * 100;
@@ -59,9 +59,9 @@ export async function GET(req: NextRequest) {
       // Today's metrics grouping
       if (recordDate >= today && r.recordType !== "goal") {
         if (type.includes("heart") && !latestMetrics.heartRate) latestMetrics.heartRate = Number(r.value);
-        if (type.includes("step")) latestMetrics.steps += Number(r.value);
-        if (type.includes("sleep") && !latestMetrics.sleep) latestMetrics.sleep = Number(r.value);
-        if (type.includes("calor")) latestMetrics.calories += Number(r.value);
+        if (type.includes("step")) latestMetrics.steps = Math.max(latestMetrics.steps, Number(r.value));
+        if (type.includes("sleep")) latestMetrics.sleep = Math.max(latestMetrics.sleep, Number(r.value));
+        if (type.includes("calor")) latestMetrics.calories = Math.max(latestMetrics.calories, Number(r.value));
         if (type.includes("water") || type.includes("hydrat")) {
           latestMetrics.hydration += Number(r.value); // sum hydration
         }

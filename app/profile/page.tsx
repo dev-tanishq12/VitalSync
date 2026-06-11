@@ -177,10 +177,10 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#4edea3]/10 rounded-lg"><span className="material-symbols-outlined text-[#4edea3]">steps</span></div>
-                        <span className="text-[#dae2fd] font-medium font-['Inter']">Total Steps</span>
+                        <span className="text-[#dae2fd] font-medium font-['Inter']">Today's Steps</span>
                       </div>
                       <span className="text-2xl font-bold text-[#4edea3] font-['Plus_Jakarta_Sans']">
-                        {records?.filter(r => r.metricType?.toLowerCase().includes("step")).reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                        {metrics?.steps?.toLocaleString() || "0"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
