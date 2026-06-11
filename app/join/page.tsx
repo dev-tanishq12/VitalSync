@@ -69,7 +69,13 @@ export default function JoinPage() {
           displayName: `${firstName} ${lastName}`.trim()
         });
       });
-      router.push("/onboarding");
+      
+      // Sign out immediately to require manual login
+      await auth.signOut();
+      
+      // Clear password and switch back to Login view
+      setPassword("");
+      setIsSignup(false);
     } catch (err: any) {
       setError(err.message || "Failed to sign up");
     } finally {

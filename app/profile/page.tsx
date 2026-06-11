@@ -4,9 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { authFetch } from "@/lib/fetch";
+import { useRouter } from "next/navigation";
+import TopNavBar from "@/components/TopNavBar";
+import { useBiometrics } from "@/hooks/useBiometrics";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { profile, records, metrics } = useBiometrics();
   const [appleSyncStatus, setAppleSyncStatus] = useState("Sync Now");
   const [isAppleSyncing, setIsAppleSyncing] = useState(false);
   const [fitbitSyncStatus, setFitbitSyncStatus] = useState("Sync Now");
@@ -79,31 +83,7 @@ export default function ProfilePage() {
       `}} />
 
       {/* TopNavBar */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-10 h-20 bg-[#171f33]/60 backdrop-blur-xl border-b border-white/10 shadow-md shadow-[#adc6ff]/10">
-        <div className="flex items-center gap-4">
-          <span className="font-['Plus_Jakarta_Sans'] text-[32px] md:text-[48px] font-bold text-[#adc6ff] md:hidden">VitalSync</span>
-        </div>
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8c909f]">search</span>
-            <input className="w-full sunken-input rounded-full py-2 pl-10 pr-4 text-[#dae2fd] focus:outline-none focus:ring-2 focus:ring-[#adc6ff]/50 transition-all text-[14px] font-['Inter']" placeholder="Search metrics, records, or devices..." type="text" />
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">notifications</button>
-            <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">sync</button>
-            <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 p-2 rounded-full transition-colors active:scale-95">add_circle</button>
-          </div>
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#adc6ff]/20 hidden md:flex items-center justify-center bg-[#002e6a]">
-            {user?.photoURL ? (
-              <img alt="User avatar" className="w-full h-full object-cover" src={user.photoURL} />
-            ) : (
-              <span className="text-[#adc6ff] font-bold text-lg">{user?.displayName?.charAt(0) || "O"}</span>
-            )}
-          </div>
-        </div>
-      </header>
+      <TopNavBar />
 
       {/* SideNavBar */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-[#131b2e]/60 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-black/20 flex flex-col pt-24 pb-8 z-40 hidden md:flex custom-scrollbar overflow-y-auto">
@@ -121,19 +101,16 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined">dashboard</span>
             <span className="font-['Inter'] text-[14px]">Dashboard</span>
           </Link>
-          <Link href="/insights" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
-            <span className="material-symbols-outlined">insights</span>
-            <span className="font-['Inter'] text-[14px]">Analytics</span>
-          </Link>
+
           <Link href="/goals" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
             <span className="material-symbols-outlined">target</span>
             <span className="font-['Inter'] text-[14px]">Goals</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
+          <Link href="/records" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
             <span className="material-symbols-outlined">folder_shared</span>
             <span className="font-['Inter'] text-[14px]">Health Records</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
+          <Link href="/devices" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
             <span className="material-symbols-outlined">devices</span>
             <span className="font-['Inter'] text-[14px]">Devices</span>
           </Link>
@@ -141,16 +118,10 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
             <span className="font-['Inter'] text-[14px]">Profile</span>
           </Link>
-          <Link href="/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
-            <span className="material-symbols-outlined">settings</span>
-            <span className="font-['Inter'] text-[14px]">Settings</span>
-          </Link>
+
         </nav>
         <div className="px-3 mt-auto space-y-1">
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#c2c6d6]/80 hover:bg-white/5 hover:text-[#dae2fd] transition-all duration-200">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-['Inter'] text-[14px]">Help</span>
-          </Link>
+
           <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#ffb4ab] hover:bg-white/5 hover:text-[#ffdad6] transition-all duration-200">
             <span className="material-symbols-outlined">logout</span>
             <span className="font-['Inter'] text-[14px]">Logout</span>
@@ -184,17 +155,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold text-[#dae2fd]">{user?.displayName || "Alex Chen"}</h3>
-                <p className="text-[#c2c6d6] mb-6">Elite Biohacker | San Francisco, CA</p>
-                <div className="w-full grid grid-cols-2 gap-4">
-                  <div className="sunken-input p-4 rounded-2xl">
-                    <span className="text-[#c2c6d6] text-[12px] font-semibold uppercase block mb-1">Weight</span>
-                    <span className="text-[#dae2fd] font-bold text-lg">78.5 kg</span>
-                  </div>
-                  <div className="sunken-input p-4 rounded-2xl">
-                    <span className="text-[#c2c6d6] text-[12px] font-semibold uppercase block mb-1">Height</span>
-                    <span className="text-[#dae2fd] font-bold text-lg">182 cm</span>
-                  </div>
-                </div>
+                <p className="text-[#c2c6d6] mb-6">{profile?.bio || "VitalSync User"} | {profile?.location || "Unknown"}</p>
               </div>
 
               {/* Stats & Goals Bento */}
@@ -209,23 +170,27 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#adc6ff]/10 rounded-lg"><span className="material-symbols-outlined text-[#adc6ff]">fitness_center</span></div>
-                        <span className="text-[#dae2fd] font-medium font-['Inter']">Workouts</span>
+                        <span className="text-[#dae2fd] font-medium font-['Inter']">Total Records</span>
                       </div>
-                      <span className="text-2xl font-bold text-[#adc6ff] font-['Plus_Jakarta_Sans']">1,284</span>
+                      <span className="text-2xl font-bold text-[#adc6ff] font-['Plus_Jakarta_Sans']">{records?.length || 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#4edea3]/10 rounded-lg"><span className="material-symbols-outlined text-[#4edea3]">steps</span></div>
-                        <span className="text-[#dae2fd] font-medium font-['Inter']">Steps</span>
+                        <span className="text-[#dae2fd] font-medium font-['Inter']">Total Steps</span>
                       </div>
-                      <span className="text-2xl font-bold text-[#4edea3] font-['Plus_Jakarta_Sans']">14.2M</span>
+                      <span className="text-2xl font-bold text-[#4edea3] font-['Plus_Jakarta_Sans']">
+                        {records?.filter(r => r.metricType?.toLowerCase().includes("step")).reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#d0bcff]/10 rounded-lg"><span className="material-symbols-outlined text-[#d0bcff]">bedtime</span></div>
-                        <span className="text-[#dae2fd] font-medium font-['Inter']">Deep Sleep</span>
+                        <span className="text-[#dae2fd] font-medium font-['Inter']">Total Sleep</span>
                       </div>
-                      <span className="text-2xl font-bold text-[#d0bcff] font-['Plus_Jakarta_Sans']">3,420h</span>
+                      <span className="text-2xl font-bold text-[#d0bcff] font-['Plus_Jakarta_Sans']">
+                        {records?.filter(r => r.metricType?.toLowerCase().includes("sleep")).reduce((acc, curr) => acc + curr.value, 0).toFixed(1)}h
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -237,28 +202,28 @@ export default function ProfilePage() {
                     <div>
                       <div className="flex justify-between font-['Inter'] text-[14px] font-medium mb-2">
                         <span className="text-[#dae2fd]">Steps Goal</span>
-                        <span className="text-[#c2c6d6]">8,450 / 12,000</span>
+                        <span className="text-[#c2c6d6]">{metrics?.steps?.toLocaleString() || 0} / 10,000</span>
                       </div>
                       <div className="h-2 bg-[#2d3449] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#adc6ff] active-glow" style={{ width: "70%" }}></div>
+                        <div className="h-full bg-[#adc6ff] active-glow transition-all" style={{ width: `${Math.min(100, ((metrics?.steps || 0) / 10000) * 100)}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between font-['Inter'] text-[14px] font-medium mb-2">
                         <span className="text-[#dae2fd]">Sleep Target</span>
-                        <span className="text-[#c2c6d6]">7.5h / 8.0h</span>
+                        <span className="text-[#c2c6d6]">{metrics?.sleep || 0}h / 8.0h</span>
                       </div>
                       <div className="h-2 bg-[#2d3449] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#4edea3] active-glow" style={{ width: "93%" }}></div>
+                        <div className="h-full bg-[#4edea3] active-glow transition-all" style={{ width: `${Math.min(100, ((metrics?.sleep || 0) / 8) * 100)}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between font-['Inter'] text-[14px] font-medium mb-2">
                         <span className="text-[#dae2fd]">Water Intake</span>
-                        <span className="text-[#c2c6d6]">2.1L / 3.0L</span>
+                        <span className="text-[#c2c6d6]">{metrics?.hydration || 0}L / 3.0L</span>
                       </div>
                       <div className="h-2 bg-[#2d3449] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#d0bcff] active-glow" style={{ width: "65%" }}></div>
+                        <div className="h-full bg-[#d0bcff] active-glow transition-all" style={{ width: `${Math.min(100, ((metrics?.hydration || 0) / 3) * 100)}%` }}></div>
                       </div>
                     </div>
                   </div>
@@ -391,16 +356,13 @@ export default function ProfilePage() {
           <span className="material-symbols-outlined">dashboard</span>
           <span className="text-[10px] font-bold uppercase">Home</span>
         </Link>
-        <Link href="/insights" className="flex flex-col items-center gap-1 text-[#c2c6d6]">
-          <span className="material-symbols-outlined">insights</span>
-          <span className="text-[10px] font-bold uppercase">Stats</span>
-        </Link>
+
         <div className="relative -top-8">
           <button className="w-14 h-14 bg-[#adc6ff] text-[#002e6a] rounded-full shadow-lg shadow-[#adc6ff]/40 flex items-center justify-center active:scale-90 transition-transform">
             <span className="material-symbols-outlined text-3xl">add</span>
           </button>
         </div>
-        <Link href="#" className="flex flex-col items-center gap-1 text-[#c2c6d6]">
+        <Link href="/devices" className="flex flex-col items-center gap-1 text-[#c2c6d6]">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>devices</span>
           <span className="text-[10px] font-bold uppercase">Devices</span>
         </Link>

@@ -9,6 +9,7 @@ export default function GoalsPage() {
   const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState("Save Record");
   const [records, setRecords] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
   
   // Form state
   const [metricCategory, setMetricCategory] = useState("Heart Rate (BPM)");
@@ -36,7 +37,19 @@ export default function GoalsPage() {
         })
       });
       if (res.ok) {
+        await authFetch("/api/records", {
+          method: "POST",
+          body: JSON.stringify({
+            metricType: `Goal Set: ${goalTitle}`,
+            value: Number(goalTarget) || 0,
+            unit: "unit",
+            recordType: "goal",
+            recordedAt: new Date().toISOString()
+          })
+        });
+
         setGoalStatus("Success!");
+        fetchGoals();
         setTimeout(() => {
           setIsCreateGoalOpen(false);
           setGoalTitle("");
@@ -56,8 +69,21 @@ export default function GoalsPage() {
   useEffect(() => {
     if (user) {
       fetchRecords();
+      fetchGoals();
     }
   }, [user]);
+
+  const fetchGoals = async () => {
+    try {
+      const res = await authFetch("/api/goals");
+      if (res.ok) {
+        const data = await res.json();
+        setGoals(data.goals || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch goals", err);
+    }
+  };
 
   const fetchRecords = async () => {
     try {
@@ -106,6 +132,23 @@ export default function GoalsPage() {
     }
   };
 
+  const getProgress = (goal: any) => {
+    if (!goal.targetValue) return 0;
+    return Math.min(100, Math.floor((goal.currentValue / goal.targetValue) * 100));
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this goal?")) return;
+    try {
+      const res = await authFetch(`/api/goals?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchGoals();
+      }
+    } catch (err) {
+      console.error("Failed to delete goal", err);
+    }
+  };
+
   return (
     <div className="bg-[#0b1326] text-[#dae2fd] font-['Inter'] selection:bg-[#adc6ff]/30 min-h-screen">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -150,7 +193,13 @@ export default function GoalsPage() {
           <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 transition-colors duration-300 p-2 rounded-full">sync</button>
           <button className="material-symbols-outlined text-[#adc6ff] hover:bg-white/5 transition-colors duration-300 p-2 rounded-full">add_circle</button>
           <div className="h-10 w-10 rounded-full border border-[#adc6ff]/30 overflow-hidden ml-2 hidden md:block">
-            <img alt="User avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfMDfq152zMy1TkIUjBcoDsa1tTBiN7hIM6VMSqYU1XKm83FIiEnxYqXBKN5P8q9_RWlRM42FkWoVaiC-WE2E1vv3KahxBcS0wP_Drn96ymwfroW9IEpx-ibB7wPUrwurUo1kOQGsL4v0btjp-ZAPwwWbYBgxGbtTlRhOHJVjOYFt-b8lAyMn2sKISV9r7D826FxGZzP5eqrrLN0QHQjpwpVRwDn_WKL6v3_JHYvmK4gf_ZCuhJlighnLlZJr7Ky_9aRiL8JPOgZhg" />
+            {user?.photoURL ? (
+              <img alt="User avatar" className="w-full h-full object-cover" src={user.photoURL} referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-full h-full bg-[#2d3449] flex items-center justify-center text-[#adc6ff] font-bold">
+                {user?.displayName?.charAt(0) || "U"}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -174,15 +223,12 @@ export default function GoalsPage() {
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">dashboard</span>
             <span className="font-['Inter'] text-[14px]">Dashboard</span>
           </Link>
-          <Link href="/insights" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
-            <span className="material-symbols-outlined group-hover:text-[#adc6ff]">insights</span>
-            <span className="font-['Inter'] text-[14px]">Analytics</span>
-          </Link>
+
           <Link href="/goals" className="flex items-center gap-4 px-4 py-3 bg-[#adc6ff]/20 text-[#adc6ff] border-l-4 border-[#adc6ff] transition-all duration-200 rounded-r-xl active:translate-x-1">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>target</span>
             <span className="font-['Inter'] text-[14px]">Goals</span>
           </Link>
-          <Link href="/goals#health-records" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
+          <Link href="/records" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">folder_shared</span>
             <span className="font-['Inter'] text-[14px]">Health Records</span>
           </Link>
@@ -190,11 +236,8 @@ export default function GoalsPage() {
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">emoji_events</span>
             <span className="font-['Inter'] text-[14px]">Challenges</span>
           </Link>
-          <Link href="/gamified" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
-            <span className="material-symbols-outlined group-hover:text-[#adc6ff]">military_tech</span>
-            <span className="font-['Inter'] text-[14px]">Achievements</span>
-          </Link>
-          <Link href="/profile" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
+
+          <Link href="/devices" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl group active:translate-x-1">
             <span className="material-symbols-outlined group-hover:text-[#adc6ff]">devices</span>
             <span className="font-['Inter'] text-[14px]">Devices</span>
           </Link>
@@ -205,14 +248,8 @@ export default function GoalsPage() {
             <span className="material-symbols-outlined">person</span>
             <span className="font-['Inter'] text-[14px]">Profile</span>
           </Link>
-          <Link href="/settings" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl">
-            <span className="material-symbols-outlined">settings</span>
-            <span className="font-['Inter'] text-[14px]">Settings</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-4 px-4 py-3 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5 transition-all duration-200 rounded-xl">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-['Inter'] text-[14px]">Help</span>
-          </Link>
+
+
           <Link href="/" className="flex items-center gap-4 px-4 py-3 text-[#ffb4ab] hover:bg-white/5 transition-all duration-200 rounded-xl">
             <span className="material-symbols-outlined text-[#ffb4ab]">logout</span>
             <span className="font-['Inter'] text-[14px] text-[#ffb4ab]">Logout</span>
@@ -240,71 +277,43 @@ export default function GoalsPage() {
 
           {/* Bento Grid Goals */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Goal Card 1 */}
-            <div className="glass-card rounded-xl p-8 flex flex-col justify-between group h-80">
-              <div className="flex justify-between items-start">
-                <div className="bg-[#adc6ff]/20 p-4 rounded-xl">
-                  <span className="material-symbols-outlined text-[#adc6ff] text-3xl">directions_run</span>
+            {goals.map((goal, i) => (
+              <div key={goal.id || i} className="glass-card rounded-xl p-8 flex flex-col justify-between group h-80">
+                <div className="flex justify-between items-start">
+                  <div className="bg-[#adc6ff]/20 p-4 rounded-xl">
+                    <span className="material-symbols-outlined text-[#adc6ff] text-3xl">target</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="material-symbols-outlined text-[#424754] hover:text-[#adc6ff] transition-colors">edit</button>
+                    <button onClick={() => handleDeleteGoal(goal.id)} className="material-symbols-outlined text-[#424754] hover:text-[#ffb4ab] transition-colors">delete</button>
+                  </div>
                 </div>
-                <button className="material-symbols-outlined text-[#424754] hover:text-[#adc6ff] transition-colors">edit</button>
-              </div>
-              <div className="mt-8">
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold">Daily Steps</h3>
-                <p className="text-[#c2c6d6] font-['Inter'] text-[14px]">Current: 8,432 / 12,000</p>
-              </div>
-              <div className="w-full mt-6">
-                <div className="flex justify-between text-[12px] font-semibold mb-2 text-[#adc6ff]">
-                  <span>70% Complete</span>
-                  <span>3,568 left</span>
+                <div className="mt-8">
+                  <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold">{goal.title}</h3>
+                  <p className="text-[#c2c6d6] font-['Inter'] text-[14px]">Current: {goal.currentValue} / {goal.targetValue} {goal.unit}</p>
                 </div>
-                <div className="h-3 w-full sunken-glass rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#adc6ff] to-[#4d8eff] rounded-full w-[70%] relative">
-                    <div className="absolute top-0 right-0 h-full w-2 bg-white/40 blur-[2px]"></div>
+                <div className="w-full mt-6">
+                  <div className="flex justify-between text-[12px] font-semibold mb-2 text-[#adc6ff]">
+                    <span>{getProgress(goal)}% Complete</span>
+                    <span>{goal.targetValue - goal.currentValue} left</span>
+                  </div>
+                  <div className="h-3 w-full sunken-glass rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#adc6ff] to-[#4d8eff] rounded-full transition-all duration-1000 relative" style={{ width: `${getProgress(goal)}%` }}>
+                      <div className="absolute top-0 right-0 h-full w-2 bg-white/40 blur-[2px]"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Goal Card 2 */}
-            <div className="glass-card rounded-xl p-8 flex flex-col items-center justify-center gap-6 h-80">
-              <div className="relative w-40 h-40">
-                <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
-                  <circle className="text-[#222a3d]" cx="50" cy="50" fill="transparent" r="40" strokeWidth="8" stroke="currentColor"></circle>
-                  <circle className="text-[#4edea3] drop-shadow-[0_0_8px_rgba(78,222,163,0.5)]" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" strokeDasharray="251.2" strokeDashoffset="62.8" strokeLinecap="round" strokeWidth="8"></circle>
-                  <circle className="text-[#222a3d]" cx="50" cy="50" fill="transparent" r="30" stroke="currentColor" strokeWidth="8"></circle>
-                  <circle className="text-[#d0bcff] drop-shadow-[0_0_8px_rgba(160,120,255,0.5)]" cx="50" cy="50" fill="transparent" r="30" stroke="currentColor" strokeDasharray="188.4" strokeDashoffset="37.6" strokeLinecap="round" strokeWidth="8"></circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="material-symbols-outlined text-[#4edea3]">water_drop</span>
-                  <span className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold">75%</span>
-                </div>
+            ))}
+            
+            {goals.length === 0 && (
+              <div className="col-span-1 md:col-span-3 glass-card rounded-xl p-12 text-center flex flex-col items-center justify-center">
+                <span className="material-symbols-outlined text-6xl text-[#adc6ff]/30 mb-4">flag</span>
+                <h3 className="text-xl font-bold text-[#dae2fd] mb-2">No Goals Set</h3>
+                <p className="text-[#c2c6d6] mb-6">Create a goal to start optimizing your health journey!</p>
+                <button onClick={() => setIsCreateGoalOpen(true)} className="bg-[#adc6ff]/20 hover:bg-[#adc6ff]/40 text-[#adc6ff] font-semibold px-6 py-2 rounded-xl transition-all">Create Goal</button>
               </div>
-              <div className="text-center">
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[14px] font-bold">Hydration Target</h3>
-                <p className="text-[#c2c6d6] font-['Inter'] text-[14px]">2.5L / 3.2L</p>
-              </div>
-            </div>
-
-            {/* Goal Card 3 */}
-            <div className="glass-card rounded-xl p-8 flex flex-col justify-between h-80 bg-gradient-to-br from-[#171f33]/60 to-[#d0bcff]/10">
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-[#d0bcff]/20 p-4 rounded-xl">
-                    <span className="material-symbols-outlined text-[#d0bcff] text-3xl">bedtime</span>
-                  </div>
-                  <span className="bg-[#d0bcff]/10 text-[#d0bcff] px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">High Priority</span>
-                </div>
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold">Deep Sleep Focus</h3>
-                <p className="text-[#c2c6d6] font-['Inter'] text-[16px] mt-2">Maintain &gt;1.5h deep sleep for 5 consecutive nights.</p>
-              </div>
-              <div className="flex gap-2">
-                <div className="h-2 flex-1 rounded-full bg-[#d0bcff] neon-glow"></div>
-                <div className="h-2 flex-1 rounded-full bg-[#d0bcff] neon-glow"></div>
-                <div className="h-2 flex-1 rounded-full bg-[#d0bcff] neon-glow"></div>
-                <div className="h-2 flex-1 rounded-full sunken-glass"></div>
-                <div className="h-2 flex-1 rounded-full sunken-glass"></div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Milestones */}
@@ -343,122 +352,7 @@ export default function GoalsPage() {
           </div>
         </section>
 
-        {/* Section: Health Records */}
-        <section className="space-y-6 pt-16 border-t border-white/5" id="health-records">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <div>
-              <h2 className="font-['Plus_Jakarta_Sans'] text-[32px] font-semibold text-[#dae2fd]">Health Intelligence Records</h2>
-              <p className="text-[#c2c6d6] mt-2 text-[14px]">Audit your biometric history and log new data points.</p>
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <button className="bg-[#2d3449]/40 hover:bg-[#2d3449]/60 text-[#dae2fd] font-['Inter'] text-[14px] font-semibold px-6 py-2 rounded-xl border border-white/5 transition-all flex-1 md:flex-none">Export Report</button>
-              <button className="bg-[#adc6ff] text-[#00285d] font-['Inter'] text-[14px] font-semibold px-6 py-2 rounded-xl shadow-lg shadow-[#adc6ff]/20 active:scale-95 transition-all flex-1 md:flex-none">Sync Device</button>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Manual Entry Form */}
-            <div className="lg:col-span-1 glass-card rounded-xl p-8 space-y-6 h-fit">
-              <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold text-[#adc6ff]">Log Biometrics</h3>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Vitals Category</label>
-                  <select value={metricCategory} onChange={e => setMetricCategory(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none">
-                    <option className="bg-[#0b1326]">Heart Rate (BPM)</option>
-                    <option className="bg-[#0b1326]">Blood Glucose (mg/dL)</option>
-                    <option className="bg-[#0b1326]">Body Weight (kg)</option>
-                    <option className="bg-[#0b1326]">Body Fat %</option>
-                    <option className="bg-[#0b1326]">Blood Pressure</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Value</label>
-                  <input value={metricValue} onChange={e => setMetricValue(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none placeholder:text-[#424754]" placeholder="Enter metric..." type="text" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Date</label>
-                    <input value={metricDate} onChange={e => setMetricDate(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="date" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">Time</label>
-                    <input value={metricTime} onChange={e => setMetricTime(e.target.value)} className="w-full sunken-glass rounded-xl border-none text-[#dae2fd] font-['Inter'] text-[14px] p-4 focus:ring-2 focus:ring-[#adc6ff]/40 outline-none" type="time" />
-                  </div>
-                </div>
-                <button 
-                  onClick={handleSave}
-                  className={`w-full py-4 font-bold rounded-xl mt-6 transition-all font-['Inter'] text-[16px]
-                  ${saveStatus === "Record Saved!" 
-                    ? "bg-gradient-to-r from-[#4edea3] to-[#00a572] text-[#00311f]" 
-                    : saveStatus === "Syncing..."
-                    ? "bg-gradient-to-r from-[#adc6ff] to-[#4d8eff] text-[#00285d] opacity-80"
-                    : "bg-gradient-to-r from-[#adc6ff] to-[#4d8eff] text-[#00285d] hover:shadow-[0_0_20px_rgba(173,198,255,0.4)]"}`}>
-                  {saveStatus}
-                </button>
-              </div>
-            </div>
-
-            {/* History Table */}
-            <div className="lg:col-span-2 glass-card rounded-xl flex flex-col">
-              <div className="p-8 border-b border-white/5 flex justify-between items-center">
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[24px] font-semibold">Historical Data Audit</h3>
-                <div className="flex gap-2">
-                  <button className="material-symbols-outlined p-2 hover:bg-white/5 rounded-lg text-[#8c909f] transition-colors">filter_list</button>
-                  <button className="material-symbols-outlined p-2 hover:bg-white/5 rounded-lg text-[#8c909f] transition-colors">download</button>
-                </div>
-              </div>
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-white/5 text-[12px] font-semibold text-[#8c909f] uppercase tracking-wider">
-                      <th className="px-8 py-6 font-medium">Metric</th>
-                      <th className="px-8 py-6 font-medium">Value</th>
-                      <th className="px-8 py-6 font-medium">Date & Time</th>
-                      <th className="px-8 py-6 font-medium">Status</th>
-                      <th className="px-8 py-6 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[16px] divide-y divide-white/5">
-                    {records.length > 0 ? records.map(record => (
-                      <tr key={record.id} className="hover:bg-white/5 transition-colors cursor-pointer group">
-                        <td className="px-8 py-6 flex items-center gap-4">
-                          <div className={`w-2 h-2 rounded-full ${record.metricType.includes("Heart") ? "bg-[#adc6ff]" : record.metricType.includes("Weight") ? "bg-[#d0bcff]" : "bg-[#4edea3]"}`}></div>
-                          <span>{record.metricType}</span>
-                        </td>
-                        <td className="px-8 py-6 font-bold">{record.value} {record.unit}</td>
-                        <td className="px-8 py-6 text-[#c2c6d6]">{new Date(record.recordedAt).toLocaleString()}</td>
-                        <td className="px-8 py-6">
-                          <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">LOGGED</span>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                        </td>
-                      </tr>
-                    )) : (
-                      <tr className="hover:bg-white/5 transition-colors cursor-pointer group">
-                        <td className="px-8 py-6 flex items-center gap-4">
-                          <div className="w-2 h-2 rounded-full bg-[#adc6ff]"></div>
-                          <span>Resting HR</span>
-                        </td>
-                        <td className="px-8 py-6 font-bold">58 BPM</td>
-                        <td className="px-8 py-6 text-[#c2c6d6]">Oct 24, 2023 · 07:12 AM</td>
-                        <td className="px-8 py-6">
-                          <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-1 rounded-full text-[10px] font-bold">OPTIMAL</span>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <button className="material-symbols-outlined text-[#8c909f] group-hover:text-[#dae2fd] transition-colors">more_vert</button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="p-8 mt-auto flex justify-center">
-                <button className="text-[#adc6ff] font-['Inter'] text-[14px] font-semibold hover:underline">View All History</button>
-              </div>
-            </div>
-          </div>
-        </section>
 
 
         {/* Create Goal Modal */}

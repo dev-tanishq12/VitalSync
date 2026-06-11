@@ -68,15 +68,12 @@ export default function SettingsPage() {
             <span className="material-symbols-outlined">dashboard</span>
             <span className="font-['Inter'] text-[14px]">Dashboard</span>
           </Link>
-          <Link href="/insights" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
-            <span className="material-symbols-outlined">insights</span>
-            <span className="font-['Inter'] text-[14px]">Analytics</span>
-          </Link>
+
           <Link href="/goals" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
             <span className="material-symbols-outlined">target</span>
             <span className="font-['Inter'] text-[14px]">Goals</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
+          <Link href="/records" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
             <span className="material-symbols-outlined">folder_shared</span>
             <span className="font-['Inter'] text-[14px]">Health Records</span>
           </Link>
@@ -84,11 +81,8 @@ export default function SettingsPage() {
             <span className="material-symbols-outlined">emoji_events</span>
             <span className="font-['Inter'] text-[14px]">Challenges</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
-            <span className="material-symbols-outlined">military_tech</span>
-            <span className="font-['Inter'] text-[14px]">Achievements</span>
-          </Link>
-          <Link href="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
+
+          <Link href="/devices" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
             <span className="material-symbols-outlined">devices</span>
             <span className="font-['Inter'] text-[14px]">Devices</span>
           </Link>
@@ -96,20 +90,10 @@ export default function SettingsPage() {
             <span className="material-symbols-outlined">person</span>
             <span className="font-['Inter'] text-[14px]">Profile</span>
           </Link>
-          <Link href="/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 bg-[#adc6ff]/20 text-[#adc6ff] border-l-4 border-[#adc6ff]">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>settings</span>
-            <span className="font-['Inter'] text-[14px]">Settings</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
-            <span className="material-symbols-outlined">admin_panel_settings</span>
-            <span className="font-['Inter'] text-[14px]">Admin</span>
-          </Link>
+
         </nav>
         <div className="px-4 mt-auto space-y-1">
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#c2c6d6]/80 hover:text-[#dae2fd] hover:bg-white/5">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-['Inter'] text-[14px]">Help</span>
-          </Link>
+
           <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[#ffb4ab]/80 hover:text-[#ffb4ab] hover:bg-[#ffb4ab]/10">
             <span className="material-symbols-outlined">logout</span>
             <span className="font-['Inter'] text-[14px]">Logout</span>
@@ -452,10 +436,7 @@ export default function SettingsPage() {
           <span className="material-symbols-outlined">dashboard</span>
           <span className="text-[10px] font-bold uppercase">Home</span>
         </Link>
-        <Link href="/insights" className="flex flex-col items-center gap-1 text-[#c2c6d6]">
-          <span className="material-symbols-outlined">insights</span>
-          <span className="text-[10px] font-bold uppercase">Stats</span>
-        </Link>
+
         <Link href="/gamified" className="flex flex-col items-center gap-1 text-[#c2c6d6]">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>emoji_events</span>
           <span className="text-[10px] font-bold uppercase">Arena</span>
@@ -464,10 +445,7 @@ export default function SettingsPage() {
           <span className="material-symbols-outlined">person</span>
           <span className="text-[10px] font-bold uppercase">Profile</span>
         </Link>
-        <Link href="/settings" className="flex flex-col items-center gap-1 text-[#adc6ff]">
-          <span className="material-symbols-outlined">settings</span>
-          <span className="text-[10px] font-bold uppercase">Settings</span>
-        </Link>
+
       </nav>
     </div>
   );
